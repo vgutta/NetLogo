@@ -1,0 +1,60 @@
+
+breed [motherships mothership]
+breed [agents an-agent]
+
+to setup
+  clear-all
+  
+  set-default-shape motherships "airplane"
+  
+  create-motherships 1
+  [
+    set size 3
+  ]
+  
+  set-default-shape agents "default"
+  create-agents numOfAgents 
+  
+  ;set-default-shape patches "triangle"
+  
+  draw-walls
+  
+  ask n-of numOfObs (patches with [pcolor = black])
+  [
+    set pcolor blue
+  ]
+  reset-ticks
+end
+
+to draw-walls
+; draw left and right walls
+ask patches with [abs pxcor = max-pxcor]
+[ set pcolor blue ]
+; draw top and bottom walls
+ask patches with [abs pycor = max-pycor]
+[ set pcolor blue ]
+end
+
+to move-agents
+ask agents
+[
+;; This important conditional determines if they are about to walk into a blue
+;; patch. It lets us make a decision about what to do BEFORE the turtle walks
+;; into a blue patch. This is a good way to simulate a wall or barrier that turtles
+;; cannot move onto. Notice that we don't use any information on the turtle's
+;; heading or position. Remember, patch-ahead 1 is the patch the turtle would be on
+;; if it moved forward 1 in its current heading.
+;;ifelse [pcolor] of patch-ahead 1 = blue
+;;[ lt random-float 360 ] ;; We see a blue patch in front of us. Turn a random amount.
+;[ fd 1 ] ;; Otherwise, it is safe to move forward.
+;]
+  
+ifelse [pcolor] of patch-ahead 1 = blue
+[lt random-float 360 ] ;; We see a blue patch in front of us. Turn a random amount.
+;[lt random-float 90
+[fd 1 ]
+  ]
+tick
+end
+
+
