@@ -1,9 +1,17 @@
 
 breed [motherships mothership]
-breed [agents an-agent]
+breed [samples sample]
+breed [agents trailess-agent]
+breed [antAgents antAgent]
+breed [customAgents customAgent]
+breed [nodes node]
+;;breed [steel-agents ant-agents]
+globals [groupsMade ]
 
 to setup
   clear-all
+  
+  set groupsMade 0
   
   set-default-shape motherships "airplane"
   
@@ -17,22 +25,21 @@ to setup
   
   ;set-default-shape patches "triangle"
   
-  draw-walls
   
   ask n-of numOfObs (patches with [pcolor = black])
   [
     set pcolor blue
   ]
+  ask patches[create-groups]
+  
   reset-ticks
 end
 
-to draw-walls
-; draw left and right walls
-ask patches with [abs pxcor = max-pxcor]
-[ set pcolor blue ]
-; draw top and bottom walls
-ask patches with [abs pycor = max-pycor]
-[ set pcolor blue ]
+to create-groups
+  if number-of-groups > groupsMade[ask patches in-radius random (group-size)
+    [ set pcolor 3.5]
+  set groupsMade groupsMade + 1
+  ]
 end
 
 to move-agents
@@ -48,13 +55,39 @@ ask agents
 ;;[ lt random-float 360 ] ;; We see a blue patch in front of us. Turn a random amount.
 ;[ fd 1 ] ;; Otherwise, it is safe to move forward.
 ;]
-  
-ifelse [pcolor] of patch-ahead 1 = blue
-[lt random-float 360 ] ;; We see a blue patch in front of us. Turn a random amount.
+  let hasSample false
+    if xcor = 0 and ycor = 0[
+    set hasSample false
+    ]
+ifelse hasSample
+[goHome ] ;; We see a blue patch in front of us. Turn a random amount.
 ;[lt random-float 90
-[fd 1 ]
+[ifelse [pcolor] of patch-ahead 1 = blue
+[lt random 90
+   rt random 90 ] ;; We see a blue patch in front of us. Turn a random amount.
+;[lt random-float 90
+[ifelse [pcolor] of patch-ahead 1 = 3.5
+      [face mothership 0
+        ask patch-ahead 1[set pcolor black] 
+        set hasSample true    
+      
+      ] ;; We see a blue patch in front of us. Turn a random amount.
+;[lt random-float 90
+        [fd 1 ]]]
+   
   ]
+  
+
 tick
 end
+
+to goHome
+ask agents[
+    face mothership 0
+    fd 1
+  ]
+  
+end
+
 
 
