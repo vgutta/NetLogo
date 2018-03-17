@@ -9,10 +9,11 @@ breed [paths path]
 
 
 ;;breed [steel-agents ant-agents]
-globals [groupsMade]
+globals [groupsMade  moverX moverY]
 motherships-own[
   my-neighbors
 ]
+
 
 to setup
   clear-all
@@ -21,7 +22,7 @@ to setup
   
   ;;let hasSample false
   ;;set hasSample false
-  
+  set-default-shape paths "dot"
   set-default-shape motherships "airplane"
   
   create-motherships 1
@@ -42,7 +43,7 @@ to setup
     set pcolor blue
   ]
   ask patches[create-groups]
-  ;;customMove
+  ;;antMove
   reset-ticks
 end
 
@@ -101,6 +102,64 @@ to customMove
   ;;ask agents with [color = green][
     ;;fd 1
   ;;]
+tick
+end
+
+
+to antMove
+  
+  let movingHome false
+  
+  ask agents with [color = green][
+    
+  ifelse [pcolor] of patch-ahead 1 = blue
+      [lt random 90
+        rt random 90
+      ]
+    [
+      rt random 90
+      lt random 90
+      fd 1
+    ]
+  ifelse [pcolor] of patch-ahead 1 = red
+     [   
+        ask patch-ahead 1[set pcolor black]
+        set color yellow
+     ] 
+      [rt random 90
+      lt random 90
+      fd 1]
+    
+    
+  ]
+  
+  ask agents with [color = yellow][
+    
+    face mothership 0
+    fd 1
+    set movingHome true
+    set moverX xcor
+    set moverY ycor
+    
+    ask motherships[set my-neighbors (other agents) in-radius 1]
+    ask other motherships in-radius (size / 2)
+    [
+      ask my-neighbors[
+        
+        set color  green
+      ]
+    ]
+   
+    
+    
+    
+  ]
+  create-paths 1
+  [
+    set color white
+    setxy moverX moverY
+  ]
+  
 tick
 end
 
