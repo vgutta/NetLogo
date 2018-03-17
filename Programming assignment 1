@@ -9,7 +9,7 @@ breed [paths path]
 
 
 ;;breed [steel-agents ant-agents]
-globals [groupsMade  moverX moverY]
+globals [groupsMade  moverX moverY listX listY]
 motherships-own[
   my-neighbors
 ]
@@ -17,7 +17,8 @@ motherships-own[
 
 to setup
   clear-all
-  
+  set listX []
+  set listY [] 
   set groupsMade 0
   
   ;;let hasSample false
@@ -138,8 +139,8 @@ to antMove
     face mothership 0
     fd 1
     set movingHome true
-    set moverX xcor
-    set moverY ycor
+    set listX fput xcor listX
+    set listY fput ycor listY
     
     ask motherships[set my-neighbors (other agents) in-radius 1]
     ask other motherships in-radius (size / 2)
@@ -154,11 +155,15 @@ to antMove
     
     
   ]
-  create-paths 1
-  [
-    set color white
-    setxy moverX moverY
-  ]
+ 
+ (foreach listX listY
+[ [a b] -> create-paths length listX[
+      setxy a b
+      set color white
+      
+  ]  ])
+  set listX []
+  set listY [] 
   
 tick
 end
