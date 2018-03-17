@@ -5,13 +5,22 @@ breed [agents trailess-agent]
 breed [antAgents antAgent]
 breed [customAgents customAgent]
 breed [nodes node]
+breed [paths path]
+
+
 ;;breed [steel-agents ant-agents]
-globals [groupsMade ]
+globals [groupsMade]
+motherships-own[
+  my-neighbors
+]
 
 to setup
   clear-all
   
   set groupsMade 0
+  
+  ;;let hasSample false
+  ;;set hasSample false
   
   set-default-shape motherships "airplane"
   
@@ -21,7 +30,9 @@ to setup
   ]
   
   set-default-shape agents "default"
-  create-agents numOfAgents 
+  create-agents numOfAgents [
+    set color green
+  ]
   
   ;set-default-shape patches "triangle"
   
@@ -31,63 +42,65 @@ to setup
     set pcolor blue
   ]
   ask patches[create-groups]
-  
+  ;;customMove
   reset-ticks
 end
 
 to create-groups
   if number-of-groups > groupsMade[ask patches in-radius random (group-size)
-    [ set pcolor 3.5]
+    [ set pcolor red]
   set groupsMade groupsMade + 1
   ]
 end
 
-to move-agents
-ask agents
-[
-;; This important conditional determines if they are about to walk into a blue
-;; patch. It lets us make a decision about what to do BEFORE the turtle walks
-;; into a blue patch. This is a good way to simulate a wall or barrier that turtles
-;; cannot move onto. Notice that we don't use any information on the turtle's
-;; heading or position. Remember, patch-ahead 1 is the patch the turtle would be on
-;; if it moved forward 1 in its current heading.
-;;ifelse [pcolor] of patch-ahead 1 = blue
-;;[ lt random-float 360 ] ;; We see a blue patch in front of us. Turn a random amount.
-;[ fd 1 ] ;; Otherwise, it is safe to move forward.
-;]
-  let hasSample false
-    if xcor = 0 and ycor = 0[
-    set hasSample false
+
+
+
+to customMove
+  
+  
+  ask agents with [color = green][
+    
+  ifelse [pcolor] of patch-ahead 1 = blue
+      [lt random 90
+        rt random 90
+      ]
+    [
+      rt random 90
+      lt random 90
+      fd 1
     ]
-ifelse hasSample
-[goHome ] ;; We see a blue patch in front of us. Turn a random amount.
-;[lt random-float 90
-[ifelse [pcolor] of patch-ahead 1 = blue
-[lt random 90
-   rt random 90 ] ;; We see a blue patch in front of us. Turn a random amount.
-;[lt random-float 90
-[ifelse [pcolor] of patch-ahead 1 = 3.5
-      [face mothership 0
-        ask patch-ahead 1[set pcolor black] 
-        set hasSample true    
-      
-      ] ;; We see a blue patch in front of us. Turn a random amount.
-;[lt random-float 90
-        [fd 1 ]]]
-   
+  ifelse [pcolor] of patch-ahead 1 = red
+     [   
+        ask patch-ahead 1[set pcolor black]
+        set color yellow
+     ] 
+      [rt random 90
+      lt random 90
+      fd 1]
+    
+    
   ]
   
-
-tick
-end
-
-to goHome
-ask agents[
+  ask agents with [color = yellow][
     face mothership 0
     fd 1
+    ask motherships[set my-neighbors (other agents) in-radius 1]
+    ask other motherships in-radius (size / 2)
+    [
+      ask my-neighbors[
+      
+        set color  green
+      ]
+    ]
+   
+    
+    
+    
   ]
-  
+  ;;ask agents with [color = green][
+    ;;fd 1
+  ;;]
+tick
 end
-
-
 
