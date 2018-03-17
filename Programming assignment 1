@@ -13,6 +13,7 @@ globals [groupsMade  moverX moverY listX listY]
 motherships-own[
   my-neighbors
 ]
+paths-own[ birth-ticks]
 
 
 to setup
@@ -58,7 +59,7 @@ end
 
 
 
-to customMove
+to simpleMove
   
   
   ask agents with [color = green][
@@ -110,9 +111,28 @@ end
 to antMove
   
   let movingHome false
+  let foundFood false
+  
+  ask paths[ if ticks - birth-ticks > 100 [die] ]
   
   ask agents with [color = green][
-    
+  ask other paths in-radius (1)
+    [
+      set foundFood true
+    ]
+  ifelse foundFood[
+      ifelse [pcolor] of patch-ahead 1 = blue
+      [lt random 90
+        rt random 90
+      ]
+    [
+      face mothership 0
+      rt 180
+      fd 1
+    ]
+      
+    ]
+  [  
   ifelse [pcolor] of patch-ahead 1 = blue
       [lt random 90
         rt random 90
@@ -132,7 +152,7 @@ to antMove
       fd 1]
     
     
-  ]
+  ]]
   
   ask agents with [color = yellow][
     
@@ -160,6 +180,87 @@ to antMove
 [ [a b] -> create-paths length listX[
       setxy a b
       set color white
+      set birth-ticks ticks
+      
+  ]  ])
+  set listX []
+  set listY [] 
+  
+tick
+end
+
+to customMove
+  let movingHome false
+  let foundFood false
+  
+  ask paths[ if ticks - birth-ticks > 100 [die] ]
+   
+  ask agents with [color = green][
+  ask other paths in-radius (1)
+    [
+      set foundFood true
+    ]
+  ifelse foundFood[
+      ifelse [pcolor] of patch-ahead 1 = blue
+      [lt random 90
+        rt random 90
+      ]
+    [
+      face mothership 0
+      rt 180
+      fd 1
+    ]
+      
+    ]
+  [  
+  ifelse [pcolor] of patch-ahead 1 = blue
+      [lt random 90
+        rt random 90
+      ]
+    [
+      ;;rt random 90
+      ;;lt random 90
+      fd 1
+    ]
+  ifelse [pcolor] of patch-ahead 1 = red
+     [   
+        ask patch-ahead 1[set pcolor black]
+        set color yellow
+     ] 
+      [rt random 90
+      lt random 90
+      fd 1]
+    
+    
+  ]]
+  
+  ask agents with [color = yellow][
+    
+    face mothership 0
+    fd 1
+    set movingHome true
+    set listX fput xcor listX
+    set listY fput ycor listY
+    
+    ask motherships[set my-neighbors (other agents) in-radius 1]
+    ask other motherships in-radius (size / 2)
+    [
+      ask my-neighbors[
+        
+        set color  green
+      ]
+    ]
+   
+    
+    
+    
+  ]
+ 
+ (foreach listX listY
+[ [a b] -> create-paths length listX[
+      setxy a b
+      set color white
+      set birth-ticks ticks
       
   ]  ])
   set listX []
