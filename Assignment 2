@@ -131,16 +131,18 @@ end
 ; strategy when there is only one robot, but when there are many you end up
 ; with all of them getting in each others' way.
 to move
-
-  let closest-tile min-one-of tiles [distance myself]
+  let closest-tile min-one-of tiles [distance myself + color]
   let closest-hole min-one-of holes [distance myself]
+
+  ;let closest-tile one-of tiles ;[distance myself]
+  ;let closest-hole one-of holes ;[distance myself]
   if (closest-tile != nobody)[
-    ask closest-tile [ set pcolor red]
+     ask closest-tile [ set color color + 0.02]
      ifelse (closest-hole != nobody)[
-      ifelse (closest-tile is-selectedBreed)[ask closest-tile (set breed selectedBreed]
+      ;ifelse (closest-tile is-selectedBreed)[ask closest-tile (set breed selectedBreed]
       
       ask closest-tile [set-robot-destination myself closest-hole]
-      if (distancexy destination-x destination-y < 0.3) [ ;(xcor = destination-x and ycor = destination-y)[
+      if (distancexy destination-x destination-y < 0.2) [ ;(xcor = destination-x and ycor = destination-y)[
         ;Im already at the desired location, so push the tile
         set heading rectify-heading towards closest-tile
         move-one heading
@@ -161,7 +163,3 @@ to move
         set heading heading - 90]]
     move-one heading]
 end
-
-to alsoMove
-  
-end  
