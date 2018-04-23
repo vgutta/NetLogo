@@ -1,0 +1,159 @@
+; Tileword
+; by
+; Jose M Vidal
+;
+; Tileworld was (first?) described in:
+;
+;Martha Pollack and Marc Ringuette. "Introducing the Tileworld: experimentally evaluating agent architectures."
+;Thomas Dietterich and William Swartout ed. In Proceedings of the Eighth National Conference on Artificial
+; Intelligence,  p. 183--189, AAAI Press. 1990.
+;
+;Note: fixed up for NetLogo 6.0.1 by Matt Saponaro
+
+breed [robots robot]
+breed [tiles tile]
+breed [holes hole]
+
+tiles-own [time-to-live]
+
+holes-own [time-to-live value]
+
+;desitnation- the next place I am heading towards
+robots-own [destination-x destination-y]
+
+globals [holes-born holes-filled score]
+
+
+to setup
+  ca
+  set-default-shape tiles "box"
+  set-default-shape holes "circle"
+  create-robots num-robots [
+    setxy random-xcor random-ycor]
+  reset-ticks
+end
+
+to go
+  if ticks >= 500 [ stop ]
+  update
+  tick
+end
+
+to update
+  if (random-float 1.0 < tile-birth-prob) [
+    create-tiles 1 [
+      set heading 0
+      set time-to-live tile-lifetime
+      setxy random-xcor random-ycor
+      set color yellow]]
+  if (random-float 1.0 < hole-birth-prob) [
+    set holes-born holes-born + 1
+    create-holes 1 [
+      set heading 0
+      set time-to-live hole-lifetime
+      set value random 50
+      setxy random-xcor random-ycor
+      set color blue]]
+  ask tiles [age]
+  ask holes [age]
+  no-display
+  ask robots [move]
+  display
+;  plot holes-filled
+  if (holes-born > 0)[
+    set score holes-filled * 100 / holes-born
+    plotxy ticks score
+
+  ]
+end
+
+;reports one of 0,90,180,270; whichever is closest to h
+to-report rectify-heading [h]
+  if (h < 0)[
+    set h (360 + h)]
+  if (h <= 45)[
+    report 0]
+  if (h <= 135)[
+    report 90]
+  if (h <= 225)[
+    report 180]
+  if (h <= 315)[
+    report 270]
+  report 0
+end
+
+;tiles and holes
+to age
+  if time-to-live <= 0 [die]
+  set time-to-live time-to-live - 1
+end
+
+;tiles
+
+;sets destination-of robot to be the location where robot should be
+; in order to push me towards hole.
+;HINT: This is a bad way to move tiles. Specifically, if the hole is on a diagonal
+;  from the tile, the robot tends to move back-and-forth a lot.
+to set-robot-destination [arobot ahole]
+  set heading rectify-heading (towards ahole)
+  set heading heading + 180
+  let new-x [pxcor] of patch-at dx dy
+  let new-y [pycor] of patch-at dx dy
+  ask arobot
+  [
+    set destination-x new-x
+    set destination-y new-y
+  ]
+end
+
+;moves the agent one step with in the absolute heading h.
+;It makes sure that any tile or robot that was in the destination location also moves, and so on recursively.
+;If a tile moves into a hole, both die.
+to move-one [h]
+  let oldh heading
+  set heading h
+  let pushed-agents (turtles-at dx dy) with [(breed = robots) or (breed = tiles)]
+  if (any? pushed-agents) [
+    ask pushed-agents [move-one h]]
+  if (breed = tiles and (any? holes-at dx dy))[
+    set holes-filled holes-filled + (sum [value] of holes-at dx dy)
+    ask holes-at dx dy [die]
+    die]
+  fd 1
+  set heading oldh
+end
+
+;robots
+
+; This is the obvious greedy strategy.
+; It tries to push the closest tile to the closest hole. This is a great
+; strategy when there is only one robot, but when there are many you end up
+; with all of them getting in each others' way.
+to move
+
+  let closest-tile min-one-of tiles [distance myself]
+  let closest-hole min-one-of holes [distance myself]
+  if (closest-tile != nobody)[
+     ifelse (closest-hole != nobody)[
+      ask closest-tile [set-robot-destination myself closest-hole]
+      if (distancexy destination-x destination-y < 0.1) [ ;(xcor = destination-x and ycor = destination-y)[
+        ;Im already at the desired location, so push the tile
+        set heading rectify-heading towards closest-tile
+        move-one heading
+        stop]]
+    [;there are no holes in the field, this typically only happens at the beginning of the run.
+      set destination-x [xcor] of closest-tile
+      set destination-y [ycor] of closest-tile]
+
+    ;I am not next to the tile, so set my heading towards the best position next to it.
+    set heading rectify-heading towardsxy destination-x destination-y
+
+    ;If my move will cause a tile to move then change direction by +- 90.
+    ;This will, hopefully, allow me to move around the target to push it back.
+    if (any? tiles-at dx dy)[
+      ifelse (random-float 1.0 < .5)[
+        set heading heading + 90]
+      [
+        set heading heading - 90]]
+    move-one heading]
+end
