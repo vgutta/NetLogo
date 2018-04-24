@@ -13,7 +13,6 @@
 breed [robots robot]
 breed [tiles tile]
 breed [holes hole]
-breed [selectedBreeds selectedBreed]
 
 tiles-own [time-to-live]
 
@@ -22,10 +21,11 @@ holes-own [time-to-live value]
 ;desitnation- the next place I am heading towards
 robots-own [destination-x destination-y]
 
-globals [holes-born holes-filled score]
+globals [holes-born holes-filled score ]
 
 
 to setup
+
   ca
   set-default-shape tiles "box"
   set-default-shape holes "circle"
@@ -60,7 +60,7 @@ to update
   no-display
   ask robots [move]
   display
-;  plot holes-filled
+
   if (holes-born > 0)[
     set score holes-filled * 100 / holes-born
     plotxy ticks score
@@ -95,16 +95,44 @@ end
 ; in order to push me towards hole.
 ;HINT: This is a bad way to move tiles. Specifically, if the hole is on a diagonal
 ;  from the tile, the robot tends to move back-and-forth a lot.
+; change the movement to check if robot is diagonal to tile and fix it
 to set-robot-destination [arobot ahole]
   set heading rectify-heading (towards ahole)
   set heading heading + 180
   let new-x [pxcor] of patch-at dx dy
   let new-y [pycor] of patch-at dx dy
-  ask arobot
-  [
-    set destination-x new-x
-    set destination-y new-y
-  ]
+
+  if (one-of (robots-at 0 1) = arobot and ycor > [ycor] of ahole)[ ;;if to the top of
+      ask arobot[
+        set destination-x xcor
+    set destination-y ycor]
+      stop]
+
+   if (one-of (robots-at 0 -1) = arobot and ycor < [ycor] of ahole)[ ;;if to the bottom of
+      ask arobot[
+        set destination-x xcor
+      set destination-y ycor]
+      stop]
+
+  if (one-of (robots-at 1 0) = arobot and xcor > [xcor] of ahole)[ ;;if to the right of
+      ask arobot[
+        set destination-x xcor
+      set destination-y ycor]
+      stop]
+
+
+  ifelse (one-of (robots-at -1 0) = arobot and xcor < [xcor] of ahole)[ ;; if the the left of
+      ask arobot[
+       set destination-x xcor
+          set destination-y ycor]
+      stop]
+      ;;else
+      [set new-x [pxcor] of patch-at dx dy
+    set new-y [pycor] of patch-at dx dy
+    ask arobot[
+      set destination-x new-x
+      set destination-y new-y
+  ]]
 end
 
 ;moves the agent one step with in the absolute heading h.
@@ -131,20 +159,23 @@ end
 ; strategy when there is only one robot, but when there are many you end up
 ; with all of them getting in each others' way.
 to move
-  let closest-tile min-one-of tiles [distance myself + color]
-  let closest-hole min-one-of holes [distance myself]
 
-  ;let closest-tile one-of tiles ;[distance myself]
-  ;let closest-hole one-of holes ;[distance myself]
+
+    let closest-tile min-one-of tiles [distance myself + (count robots in-radius 6) * 2];; prioritizes by distance and number of robots in radius 6
+    let numHoles (count holes)
+  set numholes (numholes / 2)
+  let max-holes max-n-of numholes holes [value]
+  let closest-hole min-one-of max-holes [distance myself]
+
   if (closest-tile != nobody)[
-     ask closest-tile [ set color color + 0.02]
-     ifelse (closest-hole != nobody)[
-      ;ifelse (closest-tile is-selectedBreed)[ask closest-tile (set breed selectedBreed]
-      
+   ;ask closest-tile [set color color + .05]
+       ifelse (closest-hole != nobody)[
       ask closest-tile [set-robot-destination myself closest-hole]
-      if (distancexy destination-x destination-y < 0.2) [ ;(xcor = destination-x and ycor = destination-y)[
+      if (distancexy destination-x destination-y < .5) [ ;(xcor = destination-x and ycor = destination-y)[
         ;Im already at the desired location, so push the tile
-        set heading rectify-heading towards closest-tile
+        let distance-to-tile distance closest-tile
+        ;if (count robots in-radius distance-to-tile < 1)[
+          set heading rectify-heading towards closest-tile
         move-one heading
         stop]]
     [;there are no holes in the field, this typically only happens at the beginning of the run.
@@ -161,5 +192,9 @@ to move
         set heading heading + 90]
       [
         set heading heading - 90]]
-    move-one heading]
+
+    move-one heading
+
+
+  ]
 end
